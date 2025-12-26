@@ -1,0 +1,4 @@
+Now, you need to manually register the admin middleware in app/Http/Kernel.php.
+Add this line to the $routeMiddleware array in the Kernel.php file:
+
+'can.admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
