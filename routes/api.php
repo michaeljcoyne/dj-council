@@ -8,6 +8,7 @@ use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\SongController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\VenueController;
+use App\Http\Controllers\API\PlaylistWidgetController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,8 @@ Route::get('/genres', [GenreController::class, 'index']);
 Route::get('/djs', [DjProfileController::class, 'index']);
 Route::get('/djs/{djProfile}', [DjProfileController::class, 'show']);
 Route::get('/djs/{djProfile}/reviews', [ReviewController::class, 'forDj']);
+
+Route::get('/dj/{djId}/playlists', [PlaylistWidgetController::class, 'getPlaylists']);
 
 // Protected API routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -63,3 +66,4 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('users', UserController::class);
     });
 });
+

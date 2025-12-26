@@ -167,6 +167,14 @@ const monthlyEarnings = [
                 >
                     <span class="ml-3">Earnings</span>
                 </Link>
+
+                <Link
+                    href="/dj/playlists"
+                    class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-lg"
+                >
+                    <span class="ml-3">Spotify Playlists</span>
+                </Link>
+
             </nav>
         </aside>
 

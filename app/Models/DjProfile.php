@@ -24,12 +24,19 @@ class DjProfile extends Model
         'location',
         'is_featured',
         'is_available',
+        'spotify_id',
+        'spotify_access_token',
+        'spotify_refresh_token',
+        'spotify_token_expires_at',
+        'spotify_playlists',
     ];
 
     protected $casts = [
         'is_featured' => 'boolean',
         'is_available' => 'boolean',
         'hourly_rate' => 'decimal:2',
+        'spotify_playlists' => 'array',
+        'spotify_token_expires_at' => 'datetime',
     ];
 
     public function user()

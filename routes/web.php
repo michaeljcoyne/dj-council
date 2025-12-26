@@ -9,13 +9,17 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VenueController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\PlaylistWidgetController;
 use Inertia\Inertia;
+use App\Http\Controllers\SpotifyController;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 */
+
+//Route::get('/api/dj/{djId}/playlists', [App\Http\Controllers\API\PlaylistWidgetController::class, 'getPlaylists']);
 
 // Public routes
 Route::get('/', function () {
@@ -26,6 +30,9 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 })->name('home');
+
+Route::get('/widget/dj/{djId}', [PlaylistWidgetController::class, 'serveWidget'])
+    ->name('public.dj.widget');
 
 Route::get('/djs', function () {
     $featuredDjs = App\Models\DjProfile::where('is_featured', true)
@@ -95,6 +102,18 @@ Route::middleware('auth')->group(function () {
         Route::get('/venues/{id}/edit', [ClientController::class, 'editVenue'])->name('venues.edit');
     });
 
+
+    // Spotify OAuth routes
+    Route::prefix('spotify')->name('spotify.')->group(function () {
+        Route::get('/redirect', [SpotifyController::class, 'redirect'])->name('redirect');
+        Route::get('/callback', [SpotifyController::class, 'callback'])->name('callback');
+        Route::post('/disconnect', [SpotifyController::class, 'disconnect'])->name('disconnect');
+        Route::get('/playlists', [SpotifyController::class, 'getPlaylists'])->name('playlists.get');
+        Route::post('/playlists/save', [SpotifyController::class, 'savePlaylists'])->name('playlists.save');
+        Route::get('/playlists/{id}', [SpotifyController::class, 'getPlaylistDetails'])->name('playlists.show');
+        Route::post('/widget/generate', [SpotifyController::class, 'generateWidget'])->name('widget.generate');
+    });
+
     // DJ routes
     Route::prefix('dj')->name('dj.')->middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', [DjController::class, 'dashboard'])->name('dashboard');
@@ -103,6 +122,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/bookings/{id}', [DjController::class, 'showBooking'])->name('bookings.show');
         Route::get('/reviews', [DjController::class, 'reviews'])->name('reviews');
         Route::get('/earnings', [DjController::class, 'earnings'])->name('earnings');
+
+
+        Route::get('/playlists', function () {
+            $djProfile = auth()->user()->djProfile;
+            return Inertia::render('DJ/SpotifyPlaylists', [
+                'djProfile' => $djProfile,
+                'isConnected' => !empty($djProfile->spotify_id),
+            ]);
+        })->name('playlists');
     });
 
     // Venue routes
@@ -118,7 +146,7 @@ Route::middleware('auth')->group(function () {
 
     // Admin routes
     // 'can.admin'
-    Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'can.admin'])->group(function () {
+    Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::get('/djs', [AdminController::class, 'djs'])->name('djs');
