@@ -212,8 +212,8 @@ onMounted(() => {
             </section>
 
             <!-- DJ Profiles Section -->
-            <section id="djs" class="section min-h-screen py-16 px-4 bg-gradient-to-b from-gray-950 via-purple-950/50 to-black">
-                <div class="max-w-6xl mx-auto pt-16">
+            <section id="djs" class="section min-h-screen py-16 bg-gradient-to-b from-gray-950 via-purple-950/50 to-black">
+                <div class="container mx-auto px-4 pt-16">
                     <h2 class="text-3xl md:text-4xl font-bold mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">Find Your Perfect DJ</h2>
                     <p class="text-center text-gray-300 mb-12 max-w-3xl mx-auto">
                         Browse our network of professional DJs, filter by genre, price, and location.
@@ -290,8 +290,8 @@ onMounted(() => {
             </section>
 
             <!-- Book Section -->
-            <section id="book" class="section min-h-screen py-16 px-4 bg-gradient-to-b from-purple-950/50 to-black">
-                <div class="max-w-6xl mx-auto pt-16">
+            <section id="book" class="section min-h-screen py-16 bg-gradient-to-b from-purple-950/50 to-black">
+                <div class="container mx-auto px-4 pt-16">
                     <h2 class="text-3xl md:text-4xl font-bold mb-6 text-center">Book Your DJ</h2>
                     <p class="text-center text-gray-300 mb-12 max-w-3xl mx-auto">
                         Book your favorite DJ in minutes. We handle the contracts, payments, and communication.
@@ -384,7 +384,7 @@ onMounted(() => {
                             <input
                                 type="email"
                                 placeholder="Your email"
-                                class="px-4 py-2 bg-purple-950/50 border border-purple-500/30 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-pink-500 w-full"
+                                class="px-4 py-2 bg-purple-950/50 border border-purple-500/30 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-pink-500 w-full text-white"
                             />
                             <button class="px-4 py-2 rounded-r-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium">
                                 Subscribe

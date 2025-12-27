@@ -1,7 +1,7 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
-import { Search, MapPin, Music, Star, Filter, X } from 'lucide-vue-next';
+import { Search, MapPin, Music, Star, Filter, X, Headphones } from 'lucide-vue-next';
 
 const props = defineProps({
     djs: Object,
@@ -74,7 +74,7 @@ const formatRate = (rate) => {
             <div class="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link href="/" class="flex items-center gap-2">
                     <div class="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
-                        <Music class="h-6 w-6 text-white" />
+                        <Headphones class="h-6 w-6 text-white" />
                     </div>
                     <span class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
                         DJ Council
@@ -103,8 +103,8 @@ const formatRate = (rate) => {
 
         <!-- Main Content - NO GAP, starts right after header -->
         <main class="pt-16">
-            <section class="min-h-screen py-8 px-4 bg-gradient-to-b from-purple-950/50 to-black">
-                <div class="max-w-6xl mx-auto">
+            <section class="min-h-screen py-8 bg-gradient-to-b from-purple-950/50 to-black">
+                <div class="container mx-auto px-4">
                     <!-- Hero Search -->
                     <div class="mb-6">
                         <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Find Your Perfect DJ</h1>
