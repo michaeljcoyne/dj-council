@@ -16,15 +16,10 @@ defineProps({
 // Mobile menu state
 const isMenuOpen = ref(false);
 
-// Scroll snap state
-const snapScrolling = ref(true);
-const scrollContainer = ref(null);
-const sections = ref([]);
-const currentSectionIndex = ref(0);
-
-// DJ Profiles
+// DJ Profiles - Sample data for welcome page
 const djs = ref([
     {
+        id: 1,
         name: "DJ Pulse",
         specialty: "House & EDM Specialist",
         image: "/placeholder.svg?height=500&width=400",
@@ -37,6 +32,7 @@ const djs = ref([
         reviews: 48
     },
     {
+        id: 2,
         name: "DJ Vinyl Queen",
         specialty: "Retro & Disco Master",
         image: "/placeholder.svg?height=500&width=400",
@@ -49,6 +45,7 @@ const djs = ref([
         reviews: 36
     },
     {
+        id: 3,
         name: "DJ Rhythm",
         specialty: "Hip-Hop & R&B Expert",
         image: "/placeholder.svg?height=500&width=400",
@@ -62,11 +59,6 @@ const djs = ref([
     }
 ]);
 
-// Toggle scroll mode
-const toggleScrollMode = () => {
-    snapScrolling.value = !snapScrolling.value;
-};
-
 // Scroll to section
 const scrollToSection = (sectionId) => {
     const section = document.getElementById(sectionId);
@@ -76,7 +68,7 @@ const scrollToSection = (sectionId) => {
 };
 
 onMounted(() => {
-    // Make all sections visible on mount for simpler implementation
+    // Make all sections visible on mount
     document.querySelectorAll('.section').forEach(section => {
         section.classList.add('section-visible');
     });
@@ -84,21 +76,20 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="DJ Agency" />
+    <Head title="DJ Council - Find Your Perfect DJ" />
 
     <div class="min-h-screen bg-black text-white">
         <!-- Mobile Navigation -->
         <header class="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-purple-500/20">
             <div class="container mx-auto px-4 h-16 flex items-center justify-between">
-                <a href="/" class="flex items-center gap-2">
-                    <!-- DJ Council Logo -->
+                <Link href="/" class="flex items-center gap-2">
                     <div class="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
                         <Headphones class="h-6 w-6 text-white" />
                     </div>
                     <span class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
-            DJ Council
-          </span>
-                </a>
+                        DJ Council
+                    </span>
+                </Link>
 
                 <nav class="hidden md:flex items-center space-x-6">
                     <a
@@ -108,13 +99,12 @@ onMounted(() => {
                     >
                         Home
                     </a>
-                    <a
-                        href="#djs"
-                        @click.prevent="scrollToSection('djs')"
+                    <Link
+                        href="/djs"
                         class="text-white hover:text-pink-400 transition-colors"
                     >
                         Find DJs
-                    </a>
+                    </Link>
                     <a
                         href="#book"
                         @click.prevent="scrollToSection('book')"
@@ -161,14 +151,13 @@ onMounted(() => {
                         <Home class="h-5 w-5" />
                         Home
                     </a>
-                    <a
-                        href="#djs"
-                        @click.prevent="scrollToSection('djs'); isMenuOpen = false"
+                    <Link
+                        href="/djs"
                         class="flex items-center gap-2 text-lg hover:text-pink-400 transition-colors"
                     >
                         <Users class="h-5 w-5" />
                         Find DJs
-                    </a>
+                    </Link>
                     <a
                         href="#book"
                         @click.prevent="scrollToSection('book'); isMenuOpen = false"
@@ -179,14 +168,14 @@ onMounted(() => {
                     </a>
 
                     <div v-if="canLogin" class="mt-4">
-                        <Link v-if="$page.props.auth && $page.props.auth.user" :href="route('dashboard')" class="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium">
+                        <Link v-if="$page.props.auth && $page.props.auth.user" :href="route('dashboard')" class="block px-4 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium text-center">
                             Dashboard
                         </Link>
                         <template v-else>
                             <Link :href="route('login')" class="flex items-center gap-2 text-lg hover:text-pink-400 transition-colors mb-2">
                                 Log in
                             </Link>
-                            <Link v-if="canRegister" :href="route('register')" class="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium">
+                            <Link v-if="canRegister" :href="route('register')" class="block px-4 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium text-center">
                                 Sign Up
                             </Link>
                         </template>
@@ -212,91 +201,36 @@ onMounted(() => {
                         Connect with top DJs, manage bookings, and build your reputation
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button class="px-6 py-3 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 font-medium">
+                        <Link href="/djs" class="px-6 py-3 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 font-medium">
                             Book a DJ
-                        </button>
-                        <button class="px-6 py-3 rounded-lg border border-pink-500 text-pink-500 hover:bg-pink-950">
+                        </Link>
+                        <Link href="/register" class="px-6 py-3 rounded-lg border border-pink-500 text-pink-500 hover:bg-pink-950">
                             Join as DJ
-                        </button>
+                        </Link>
                     </div>
-
                 </div>
             </section>
 
             <!-- DJ Profiles Section -->
-            <section id="djs" class="section min-h-screen py-16 px-4 bg-gradient-to-b from-purple-950/50 to-black">
+            <section id="djs" class="section min-h-screen py-16 px-4 bg-gradient-to-b from-gray-950 via-purple-950/50 to-black">
                 <div class="max-w-6xl mx-auto pt-16">
-                    <h2 class="text-3xl md:text-4xl font-bold mb-6 text-center">Find Your Perfect DJ</h2>
+                    <h2 class="text-3xl md:text-4xl font-bold mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">Find Your Perfect DJ</h2>
                     <p class="text-center text-gray-300 mb-12 max-w-3xl mx-auto">
                         Browse our network of professional DJs, filter by genre, price, and location.
                         All DJs are vetted and rated by our community.
                     </p>
 
-                    <!-- Filter Controls -->
-                    <div class="bg-black/50 backdrop-blur-sm p-6 rounded-xl border border-purple-500/30 mb-10">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <!-- Genre Filter -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Genre</label>
-                                <select class="w-full px-3 py-2 bg-purple-950/50 border border-purple-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-white">
-                                    <option value="">All Genres</option>
-                                    <option>House</option>
-                                    <option>EDM</option>
-                                    <option>Hip-Hop</option>
-                                    <option>R&B</option>
-                                    <option>Disco</option>
-                                    <option>Techno</option>
-                                </select>
-                            </div>
-
-                            <!-- Price Range -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Price Range</label>
-                                <select class="w-full px-3 py-2 bg-purple-950/50 border border-purple-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-white">
-                                    <option value="">Any Price</option>
-                                    <option>$100 - $300</option>
-                                    <option>$300 - $500</option>
-                                    <option>$500 - $1000</option>
-                                    <option>$1000+</option>
-                                </select>
-                            </div>
-
-                            <!-- Location -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Location</label>
-                                <select class="w-full px-3 py-2 bg-purple-950/50 border border-purple-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-white">
-                                    <option value="">All Locations</option>
-                                    <option>Los Angeles</option>
-                                    <option>New York</option>
-                                    <option>Miami</option>
-                                    <option>Chicago</option>
-                                    <option>Las Vegas</option>
-                                </select>
-                            </div>
-
-                            <!-- Reputation -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Reputation</label>
-                                <select class="w-full px-3 py-2 bg-purple-950/50 border border-purple-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-white">
-                                    <option value="">Any Rating</option>
-                                    <option>5 Stars</option>
-                                    <option>4+ Stars</option>
-                                    <option>3+ Stars</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- DJ Profiles Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div v-for="(dj, index) in djs" :key="index" class="group">
-                            <div class="relative overflow-hidden rounded-xl aspect-[3/4] mb-4">
+                        <Link v-for="(dj, index) in djs" :key="index" :href="`/djs/${dj.id}`" class="group bg-purple-950/30 backdrop-blur-sm rounded-xl border-2 border-purple-500/30 overflow-hidden hover:border-pink-500/50 transition-all">
+                            <!-- DJ Image -->
+                            <div class="relative overflow-hidden aspect-[3/4]">
                                 <img
                                     :src="dj.image"
                                     :alt="dj.name"
                                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 />
-                                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70"></div>
+                                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
                                 <div class="absolute bottom-0 left-0 right-0 p-6">
                                     <div class="flex items-center mb-2">
                                         <div class="flex">
@@ -305,12 +239,13 @@ onMounted(() => {
                                         </div>
                                         <span class="ml-2 text-sm text-gray-300">({{ dj.reviews }})</span>
                                     </div>
-                                    <h3 class="text-2xl font-bold mb-1">{{ dj.name }}</h3>
+                                    <h3 class="text-2xl font-bold mb-1 group-hover:text-pink-400 transition-colors">{{ dj.name }}</h3>
                                     <p class="text-pink-400">{{ dj.specialty }}</p>
                                 </div>
                             </div>
 
-                            <div class="bg-black/50 backdrop-blur-sm p-6 rounded-xl border border-purple-500/30">
+                            <!-- DJ Info - Connected to image -->
+                            <div class="p-6">
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
                                         <p class="text-gray-300">{{ dj.location }}</p>
@@ -325,25 +260,31 @@ onMounted(() => {
 
                                 <h4 class="font-semibold mb-2 text-pink-400">Top Genres</h4>
                                 <div class="flex flex-wrap gap-2 mb-4">
-                  <span
-                      v-for="(genre, i) in dj.genres"
-                      :key="i"
-                      class="px-3 py-1 bg-purple-900/50 rounded-full text-sm"
-                  >
-                    {{ genre }}
-                  </span>
+                                    <span
+                                        v-for="(genre, i) in dj.genres"
+                                        :key="i"
+                                        class="px-3 py-1 bg-purple-900/50 border border-purple-500/20 rounded-full text-sm"
+                                    >
+                                        {{ genre }}
+                                    </span>
                                 </div>
 
                                 <div class="flex gap-2">
-                                    <button class="flex-1 px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 rounded-lg font-medium">
+                                    <span class="flex-1 px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 rounded-lg font-medium text-center">
                                         Book Now
-                                    </button>
-                                    <button class="px-4 py-2 border border-pink-500 text-pink-500 rounded-lg hover:bg-pink-950 transition-colors">
+                                    </span>
+                                    <span class="px-4 py-2 border border-pink-500 text-pink-500 rounded-lg hover:bg-pink-950 transition-colors">
                                         View Profile
-                                    </button>
+                                    </span>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
+                    </div>
+
+                    <div class="text-center mt-12">
+                        <Link href="/djs" class="inline-block px-6 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 rounded-lg font-medium">
+                            View All DJs
+                        </Link>
                     </div>
                 </div>
             </section>
@@ -415,9 +356,9 @@ onMounted(() => {
                                 </a>
                             </li>
                             <li>
-                                <a href="#djs" @click.prevent="scrollToSection('djs')" class="text-gray-400 hover:text-pink-500 transition-colors">
+                                <Link href="/djs" class="text-gray-400 hover:text-pink-500 transition-colors">
                                     Find DJs
-                                </a>
+                                </Link>
                             </li>
                             <li>
                                 <a href="#book" @click.prevent="scrollToSection('book')" class="text-gray-400 hover:text-pink-500 transition-colors">

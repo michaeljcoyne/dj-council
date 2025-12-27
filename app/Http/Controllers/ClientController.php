@@ -9,6 +9,7 @@ use App\Models\Genre;
 use App\Models\Venue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 class ClientController extends Controller
@@ -95,70 +96,25 @@ class ClientController extends Controller
     }
 
     /**
-     * Show the DJ listings page
-     */
-    public function browseDjs(Request $request)
-    {
-        $query = DjProfile::with(['user', 'genres'])
-            ->where('is_available', true);
-
-        // Apply filters
-        if ($request->has('genre')) {
-            $query->whereHas('genres', function($q) use ($request) {
-                $q->where('genres.id', $request->genre);
-            });
-        }
-
-        if ($request->has('location')) {
-            $query->where('location', 'like', '%'.$request->location.'%');
-        }
-
-        if ($request->has('min_rate')) {
-            $query->where('hourly_rate', '>=', $request->min_rate);
-        }
-
-        if ($request->has('max_rate')) {
-            $query->where('hourly_rate', '<=', $request->max_rate);
-        }
-
-        // Sort options
-        if ($request->has('sort_by')) {
-            $sortDir = $request->sort_dir ?? 'asc';
-
-            if ($request->sort_by === 'rating') {
-                $query->withAvg('reviews', 'rating')
-                    ->orderBy('reviews_avg_rating', $sortDir === 'asc' ? 'asc' : 'desc');
-            } else {
-                $query->orderBy($request->sort_by, $sortDir);
-            }
-        } else {
-            $query->orderBy('is_featured', 'desc')
-                ->orderBy('created_at', 'desc');
-        }
-
-        $djs = $query->paginate(12);
-
-        return Inertia::render('Client/BrowseDjs', [
-            'djs' => $djs,
-            'genres' => Genre::orderBy('name')->get(),
-            'filters' => $request->only(['genre', 'location', 'min_rate', 'max_rate', 'sort_by', 'sort_dir']),
-        ]);
-    }
-
-    /**
-     * Show a single DJ profile
+     * Show a single DJ profile (public - for everyone)
      */
     public function showDj($id)
     {
         $djProfile = DjProfile::with(['user', 'genres', 'reviews' => function($query) {
             $query->where('is_approved', true)
                 ->with('user')
-                ->orderBy('created_at', 'desc');
-        }])->findOrFail($id);
+                ->orderBy('created_at', 'desc')
+                ->limit(10);
+        }])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->findOrFail($id);
 
-        return Inertia::render('Client/DjProfile', [
+        // Always use public profile for everyone
+        return Inertia::render('Public/DjProfile', [
             'dj' => $djProfile,
-            'userPlaylists' => Auth::user()->playlists,
+            'canLogin' => Route::has('login'),
+            'canRegister' => Route::has('register'),
         ]);
     }
 
@@ -313,6 +269,9 @@ class ClientController extends Controller
         ]);
     }
 
+    /**
+     * Show settings page
+     */
     public function settings()
     {
         $user = Auth::user();
@@ -320,6 +279,57 @@ class ClientController extends Controller
         return Inertia::render('Client/Settings', [
             'user' => $user,
             'spotifyConnected' => !empty($user->spotify_refresh_token),
+        ]);
+    }
+
+    /**
+     * Browse DJs (public or authenticated client)
+     */
+    public function browseDjs(Request $request)
+    {
+        $query = DjProfile::with(['user', 'genres', 'reviews'])
+            ->where('is_available', true);
+
+        // Search
+        if ($request->has('search') && $request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('stage_name', 'like', '%'.$request->search.'%')
+                    ->orWhere('specialty', 'like', '%'.$request->search.'%')
+                    ->orWhere('location', 'like', '%'.$request->search.'%');
+            });
+        }
+
+        // Genre filter
+        if ($request->has('genre') && $request->genre) {
+            $query->whereHas('genres', function($q) use ($request) {
+                $q->where('genres.id', $request->genre);
+            });
+        }
+
+        // Location filter
+        if ($request->has('location') && $request->location) {
+            $query->where('location', 'like', '%'.$request->location.'%');
+        }
+
+        // Rate filters
+        if ($request->has('min_rate') && $request->min_rate) {
+            $query->where('hourly_rate', '>=', $request->min_rate);
+        }
+        if ($request->has('max_rate') && $request->max_rate) {
+            $query->where('hourly_rate', '<=', $request->max_rate);
+        }
+
+        // Sort: Featured first, then by rating
+        $djs = $query->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->orderBy('is_featured', 'desc')
+            ->orderByDesc('reviews_avg_rating')
+            ->paginate(12);
+
+        return Inertia::render('Public/DjListing', [
+            'djs' => $djs,
+            'genres' => Genre::orderBy('name')->get(),
+            'filters' => $request->only(['search', 'genre', 'location', 'min_rate', 'max_rate']),
         ]);
     }
 }

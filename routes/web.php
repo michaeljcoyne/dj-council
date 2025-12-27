@@ -34,31 +34,9 @@ Route::get('/', function () {
 Route::get('/widget/dj/{djId}', [PlaylistWidgetController::class, 'serveWidget'])
     ->name('public.dj.widget');
 
-Route::get('/djs', function () {
-    $featuredDjs = App\Models\DjProfile::where('is_featured', true)
-        ->with(['user', 'genres'])
-        ->take(6)
-        ->get();
-
-    return Inertia::render('Public/DjListing', [
-        'featuredDjs' => $featuredDjs,
-        'genres' => App\Models\Genre::orderBy('name')->get(),
-    ]);
-})->name('djs.public');
-
-Route::get('/djs/{id}', function ($id) {
-    $djProfile = App\Models\DjProfile::with(['user', 'genres', 'reviews' => function ($query) {
-        $query->where('is_approved', true)
-            ->with('user')
-            ->orderBy('created_at', 'desc');
-    }])->findOrFail($id);
-
-    return Inertia::render('Public/DjProfile', [
-        'dj' => $djProfile,
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-    ]);
-})->name('djs.show.public');
+// PUBLIC DJ ROUTES - Use controller methods
+Route::get('/djs', [ClientController::class, 'browseDjs'])->name('djs.public');
+Route::get('/djs/{id}', [ClientController::class, 'showDj'])->name('djs.show.public');
 
 // Protected routes
 Route::middleware('auth')->group(function () {
@@ -89,8 +67,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [ClientController::class, 'dashboard'])->name('dashboard');
         Route::get('/settings', [ClientController::class, 'settings'])->name('settings');
 
-        Route::get('/djs', [ClientController::class, 'browseDjs'])->name('djs');
-        Route::get('/djs/{id}', [ClientController::class, 'showDj'])->name('djs.show');
+        // Removed /djs routes - they're now public (above)
         Route::get('/djs/{id}/book', [ClientController::class, 'bookDj'])->name('djs.book');
 
         Route::get('/bookings', [ClientController::class, 'bookings'])->name('bookings');
