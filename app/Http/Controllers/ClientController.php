@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\ClientPlaylist;
 use App\Models\DjProfile;
 use App\Models\Genre;
-use App\Models\Playlist;
 use App\Models\Venue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,19 +26,68 @@ class ClientController extends Controller
             ->with(['djProfile.user', 'venue', 'playlist'])
             ->orderBy('event_date')
             ->take(3)
-            ->get();
+            ->get()
+            ->map(function($booking) {
+                return [
+                    'id' => $booking->id,
+                    'event_type' => $booking->event_type ?? 'Event',
+                    'event_date' => $booking->event_date->format('M d, Y'),
+                    'start_time' => $booking->start_time ?? 'TBD',
+                    'end_time' => $booking->end_time ?? 'TBD',
+                    'dj_name' => $booking->djProfile->user->name ?? 'TBD',
+                    'venue_name' => $booking->venue->name ?? 'TBD',
+                    'status' => ucfirst($booking->status),
+                ];
+            });
 
-        $recentPlaylists = $user->playlists()
+        $recentPlaylists = $user->clientPlaylists()
+            ->withCount('songs')
             ->orderBy('created_at', 'desc')
             ->take(3)
-            ->get();
+            ->get()
+            ->map(function($playlist) {
+                // Calculate total duration
+                $totalSeconds = \DB::table('client_playlist_songs')
+                    ->where('client_playlist_id', $playlist->id)
+                    ->sum('duration');
+
+                $hours = floor($totalSeconds / 3600);
+                $mins = floor(($totalSeconds % 3600) / 60);
+
+                return [
+                    'id' => $playlist->id,
+                    'name' => $playlist->name,
+                    'song_count' => $playlist->songs_count,
+                    'duration' => $hours > 0 ? "{$hours}h {$mins}min" : "{$mins} min",
+                ];
+            });
 
         $featuredDjs = DjProfile::where('is_featured', true)
             ->with(['user', 'genres'])
             ->take(4)
             ->get();
 
+        // Calculate stats for dashboard cards
+        $stats = [
+            'upcomingEvents' => $user->bookings()
+                ->where('event_date', '>=', now())
+                ->where('status', 'confirmed')
+                ->count(),
+            'playlists' => $user->clientPlaylists()->count(),
+            'savedDJs' => 0, // TODO: Implement when favorites system exists
+            'completedEvents' => $user->bookings()
+                ->where('status', 'completed')
+                ->count(),
+        ];
+
+        // DEBUG: Log the counts
+        \Log::info('Dashboard Stats', [
+            'playlists_count' => $stats['playlists'],
+            'playlists_table' => $user->clientPlaylists()->getModel()->getTable(),
+        ]);
+
         return Inertia::render('Client/Dashboard', [
+            'stats' => $stats,
             'upcomingBookings' => $upcomingBookings,
             'recentPlaylists' => $recentPlaylists,
             'featuredDjs' => $featuredDjs,
@@ -75,16 +124,16 @@ class ClientController extends Controller
         // Sort options
         if ($request->has('sort_by')) {
             $sortDir = $request->sort_dir ?? 'asc';
-            
+
             if ($request->sort_by === 'rating') {
                 $query->withAvg('reviews', 'rating')
-                      ->orderBy('reviews_avg_rating', $sortDir === 'asc' ? 'asc' : 'desc');
+                    ->orderBy('reviews_avg_rating', $sortDir === 'asc' ? 'asc' : 'desc');
             } else {
                 $query->orderBy($request->sort_by, $sortDir);
             }
         } else {
             $query->orderBy('is_featured', 'desc')
-                  ->orderBy('created_at', 'desc');
+                ->orderBy('created_at', 'desc');
         }
 
         $djs = $query->paginate(12);
@@ -103,8 +152,8 @@ class ClientController extends Controller
     {
         $djProfile = DjProfile::with(['user', 'genres', 'reviews' => function($query) {
             $query->where('is_approved', true)
-                  ->with('user')
-                  ->orderBy('created_at', 'desc');
+                ->with('user')
+                ->orderBy('created_at', 'desc');
         }])->findOrFail($id);
 
         return Inertia::render('Client/DjProfile', [
@@ -152,9 +201,9 @@ class ClientController extends Controller
             case 'past':
                 $query->where(function ($q) {
                     $q->where('event_date', '<', now())
-                      ->orWhere('status', 'completed');
+                        ->orWhere('status', 'completed');
                 })
-                ->orderBy('event_date', 'desc');
+                    ->orderBy('event_date', 'desc');
                 break;
             case 'cancelled':
                 $query->where('status', 'cancelled')
@@ -192,7 +241,7 @@ class ClientController extends Controller
      */
     public function playlists()
     {
-        $playlists = Auth::user()->playlists()
+        $playlists = Auth::user()->clientPlaylists()
             ->withCount('songs')
             ->orderBy('created_at', 'desc')
             ->paginate(12);
@@ -207,7 +256,7 @@ class ClientController extends Controller
      */
     public function showPlaylist($id)
     {
-        $playlist = Auth::user()->playlists()
+        $playlist = Auth::user()->clientPlaylists()
             ->with('songs')
             ->findOrFail($id);
 
@@ -223,7 +272,7 @@ class ClientController extends Controller
     {
         $playlist = null;
         if ($id) {
-            $playlist = Auth::user()->playlists()
+            $playlist = Auth::user()->clientPlaylists()
                 ->with('songs')
                 ->findOrFail($id);
         }
