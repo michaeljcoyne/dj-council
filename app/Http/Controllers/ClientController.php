@@ -115,6 +115,10 @@ class ClientController extends Controller
             'dj' => $djProfile,
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
+            // ADD THIS LINE:
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -317,14 +321,13 @@ class ClientController extends Controller
             'djs' => $djs,
             'genres' => Genre::orderBy('name')->get(),
             'filters' => $request->only(['search', 'genre', 'location', 'min_rate', 'max_rate']),
+            // ADD THIS LINE:
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
-
-
-    /**
-     * Store booking request
-     */
     public function storeBooking(Request $request)
     {
         $validated = $request->validate([
@@ -338,17 +341,25 @@ class ClientController extends Controller
             'venue_name' => 'required|string|max:255',
             'venue_address' => 'required|string|max:255',
             'venue_city' => 'required|string|max:100',
-            'venue_postcode' => 'required|string|max:20',
+            'venue_state' => 'required|string|max:100',
+            'venue_postal_code' => 'required|string|max:20',
             'special_requests' => 'nullable|string|max:2000',
         ]);
 
         // Create or find venue
-        $venue = Venue::firstOrCreate([
-            'name' => $validated['venue_name'],
-            'address' => $validated['venue_address'],
-            'city' => $validated['venue_city'],
-            'postcode' => $validated['venue_postcode'],
-        ]);
+        $venue = Venue::firstOrCreate(
+            [
+                'name' => $validated['venue_name'],
+                'address' => $validated['venue_address'],
+                'city' => $validated['venue_city'],
+                'state' => $validated['venue_state'],
+                'postal_code' => $validated['venue_postal_code'],
+            ],
+            [
+                'user_id' => Auth::id(),
+                'country' => 'GB', // Default to UK
+            ]
+        );
 
         // If booking specific DJ, validate minimum hours and calculate pricing
         $totalPrice = null;

@@ -7,6 +7,7 @@ const props = defineProps({
     djs: Object,
     genres: Array,
     filters: Object,
+    auth: Object, // Add auth
 });
 
 const searchQuery = ref(props.filters?.search || '');
@@ -89,7 +90,12 @@ const formatRate = (rate) => {
                         Find DJs
                     </Link>
 
-                    <div class="ml-4">
+                    <div v-if="auth?.user" class="ml-4">
+                        <Link href="/client/dashboard" class="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium">
+                            Dashboard
+                        </Link>
+                    </div>
+                    <div v-else class="ml-4">
                         <Link href="/login" class="mr-2 text-white hover:text-pink-400 transition-colors">
                             Log in
                         </Link>

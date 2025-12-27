@@ -6,6 +6,7 @@ const props = defineProps({
     dj: Object,
     canLogin: Boolean,
     canRegister: Boolean,
+    auth: Object, // Add auth prop
 });
 
 const formatRate = (rate) => {
@@ -41,7 +42,12 @@ const formatRate = (rate) => {
                         Find DJs
                     </Link>
 
-                    <div v-if="canLogin" class="ml-4">
+                    <div v-if="auth?.user" class="ml-4">
+                        <Link href="/client/dashboard" class="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-medium">
+                            Dashboard
+                        </Link>
+                    </div>
+                    <div v-else-if="canLogin" class="ml-4">
                         <Link href="/login" class="mr-2 text-white hover:text-pink-400 transition-colors">
                             Log in
                         </Link>
@@ -166,19 +172,21 @@ const formatRate = (rate) => {
                                     </div>
 
                                     <div class="space-y-3">
+                                        <!-- Show Book Now if authenticated -->
                                         <Link
-                                            v-if="canLogin || canRegister"
-                                            href="/register"
-                                            class="block w-full px-4 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 rounded-lg font-medium text-center text-white"
-                                        >
-                                            Sign Up to Book
-                                        </Link>
-                                        <Link
-                                            v-else
+                                            v-if="auth?.user"
                                             :href="`/client/djs/${dj.id}/book`"
                                             class="block w-full px-4 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 rounded-lg font-medium text-center text-white"
                                         >
                                             Book Now
+                                        </Link>
+                                        <!-- Show Sign Up if not authenticated -->
+                                        <Link
+                                            v-else
+                                            href="/register"
+                                            class="block w-full px-4 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 rounded-lg font-medium text-center text-white"
+                                        >
+                                            Sign Up to Book
                                         </Link>
                                         <button class="w-full px-4 py-2 border border-pink-500 text-pink-500 rounded-lg hover:bg-pink-950 transition-colors">
                                             Message DJ
