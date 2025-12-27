@@ -144,6 +144,15 @@ class ClientPlaylistController extends Controller
 
             $tracks = $response->json()['tracks']['items'];
 
+            // DEBUG: Log first track to see what Spotify returns
+            if (!empty($tracks)) {
+                \Log::info('Spotify API first track:', [
+                    'name' => $tracks[0]['name'],
+                    'preview_url' => $tracks[0]['preview_url'],
+                    'has_preview' => !empty($tracks[0]['preview_url'])
+                ]);
+            }
+
             // Format results
             $results = collect($tracks)->map(function ($track) {
                 return [

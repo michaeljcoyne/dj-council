@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { Play, Pause, ExternalLink } from 'lucide-vue-next';
 import axios from 'axios';
 
@@ -7,89 +7,117 @@ const props = defineProps({
     spotifyId: String,
     title: String,
     artist: String,
+    previewUrl: String, // Spotify preview_url from database
 });
 
 const emit = defineEmits(['playing', 'stopped']);
 
 const isPlaying = ref(false);
 const isLoading = ref(false);
+const currentSource = ref(null); // 'preview', 'youtube', or null
 const youtubeVideoId = ref(null);
 const showYouTubePlayer = ref(false);
-const hasSpotifyPremium = ref(false);
-const spotifyPlayer = ref(null);
-
-// Check if user has Spotify Premium on mount
-onMounted(async () => {
-    try {
-        const response = await axios.get('/spotify/client/token');
-        if (response.data.access_token) {
-            hasSpotifyPremium.value = true;
-            // Don't load Spotify SDK unless user clicks play
-        }
-    } catch (error) {
-        hasSpotifyPremium.value = false;
-    }
-});
+let audioPlayer = null;
 
 const play = async () => {
     isLoading.value = true;
 
-    // Try Spotify first (Premium only)
-    if (hasSpotifyPremium.value) {
-        try {
-            await playSpotify();
-            isLoading.value = false;
-            return;
-        } catch (error) {
-            console.log('Spotify failed, falling back to YouTube:', error);
-        }
+    // Try 1: Spotify preview_url (40% success rate, instant)
+    // Check for actual URL, not just truthy value
+    if (props.previewUrl && props.previewUrl !== 'null' && props.previewUrl.startsWith('http')) {
+        console.log('✅ Using Spotify preview_url:', props.previewUrl);
+        playPreview();
+        isLoading.value = false;
+        return;
     }
 
-    // Fallback to YouTube
+    console.log('❌ No valid preview_url, trying YouTube...', props.previewUrl);
+
+    // Try 2: YouTube (50% success rate, slower)
     try {
         await playYouTube();
+        isLoading.value = false;
+        return;
     } catch (error) {
-        console.error('YouTube fallback failed:', error);
-        // Last resort: open in Spotify
-        window.open(`spotify:track:${props.spotifyId}`, '_blank');
+        console.log('❌ YouTube failed:', error);
     }
 
+    // Try 3: Open in Spotify app (always works)
+    console.log('⚠️ All previews failed, opening Spotify app');
     isLoading.value = false;
+    openInSpotify();
 };
 
-const playSpotify = async () => {
-    // This would require full Spotify SDK implementation
-    // For now, just throw to fall back to YouTube
-    throw new Error('Spotify Premium required');
-};
+const playPreview = () => {
+    if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer = null;
+    }
 
-const playYouTube = async () => {
-    // Search YouTube for this song
-    const searchQuery = `${props.artist} ${props.title}`;
+    audioPlayer = new Audio(props.previewUrl);
+    currentSource.value = 'preview';
+    isPlaying.value = true;
 
-    const response = await axios.get('/youtube/search', {
-        params: { q: searchQuery }
+    audioPlayer.play().catch(err => {
+        console.error('Preview playback failed:', err);
+        // If preview fails, try YouTube
+        playYouTube().catch(() => openInSpotify());
     });
 
-    if (!response.data.video_id) {
-        throw new Error('No YouTube video found');
-    }
+    audioPlayer.onended = () => {
+        stop();
+    };
 
-    youtubeVideoId.value = response.data.video_id;
-    showYouTubePlayer.value = true;
-    isPlaying.value = true;
     emit('playing', props.spotifyId);
 
     // Auto-stop after 30 seconds
     setTimeout(() => {
-        stop();
+        if (currentSource.value === 'preview') {
+            stop();
+        }
     }, 30000);
 };
 
+const playYouTube = async () => {
+    const searchQuery = `${props.artist} ${props.title}`;
+
+    try {
+        const response = await axios.get('/youtube/search', {
+            params: { q: searchQuery }
+        });
+
+        if (!response.data.video_id) {
+            throw new Error('No YouTube video found');
+        }
+
+        youtubeVideoId.value = response.data.video_id;
+        showYouTubePlayer.value = true;
+        currentSource.value = 'youtube';
+        isPlaying.value = true;
+        emit('playing', props.spotifyId);
+
+        // Auto-stop after 30 seconds
+        setTimeout(() => {
+            if (currentSource.value === 'youtube') {
+                stop();
+            }
+        }, 30000);
+    } catch (error) {
+        console.error('YouTube failed:', error);
+        throw error;
+    }
+};
+
 const stop = () => {
+    if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer = null;
+    }
+
     showYouTubePlayer.value = false;
     isPlaying.value = false;
     youtubeVideoId.value = null;
+    currentSource.value = null;
     emit('stopped');
 };
 
@@ -126,9 +154,10 @@ const openInSpotify = () => {
                 <div class="aspect-video bg-black rounded overflow-hidden">
                     <iframe
                         v-if="youtubeVideoId"
-                        :src="`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&start=0`"
+                        :src="`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&enablejsapi=1`"
                         frameborder="0"
                         allow="autoplay; encrypted-media"
+                        allowfullscreen
                         class="w-full h-full"
                     ></iframe>
                 </div>
@@ -147,7 +176,7 @@ const openInSpotify = () => {
             @click="play"
             :disabled="isLoading"
             class="p-2 hover:bg-purple-900/20 rounded-lg transition-all disabled:opacity-50"
-            title="Play 30s preview"
+            :title="previewUrl ? 'Play preview (Spotify)' : 'Play preview (YouTube)'"
         >
             <Play v-if="!isLoading" class="w-4 h-4 text-gray-500" />
             <svg v-else class="w-4 h-4 animate-spin text-purple-400" fill="none" viewBox="0 0 24 24">
@@ -173,5 +202,10 @@ const openInSpotify = () => {
         >
             <ExternalLink class="w-3.5 h-3.5 text-gray-500" />
         </button>
+    </div>
+
+    <!-- Debug badge (remove in production) -->
+    <div v-if="isPlaying && currentSource" class="absolute top-0 right-0 text-[8px] bg-green-500 text-white px-1 rounded">
+        {{ currentSource === 'preview' ? 'Spotify' : 'YT' }}
     </div>
 </template>

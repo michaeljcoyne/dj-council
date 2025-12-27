@@ -372,6 +372,7 @@ const getTypeColor = (type) => ({
                                         :spotify-id="song.spotify_id"
                                         :title="song.title"
                                         :artist="song.artist"
+                                        :preview-url="song.preview_url"
                                         @playing="handlePlaying"
                                         @stopped="handleStopped"
                                     />
