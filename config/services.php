@@ -41,4 +41,8 @@ return [
         'redirect_uri' => env('SPOTIFY_REDIRECT_URI', env('APP_URL') . '/spotify/callback'),
     ],
 
+    'youtube' => [
+        'api_key' => env('YOUTUBE_API_KEY'),
+    ],
+
 ];

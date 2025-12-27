@@ -19,11 +19,15 @@ class User extends Authenticatable
         'user_type',
         'phone',
         'avatar',
+        'spotify_access_token',
+        'spotify_refresh_token',
+        'spotify_token_expires_at',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'spotify_token_expires_at' => 'datetime',
     ];
 
     protected $casts = [

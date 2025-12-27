@@ -312,4 +312,14 @@ class ClientController extends Controller
             'venue' => $venue,
         ]);
     }
+
+    public function settings()
+    {
+        $user = Auth::user();
+
+        return Inertia::render('Client/Settings', [
+            'user' => $user,
+            'spotifyConnected' => !empty($user->spotify_refresh_token),
+        ]);
+    }
 }

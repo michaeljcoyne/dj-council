@@ -13,14 +13,13 @@ use App\Http\Controllers\API\PlaylistWidgetController;
 use Inertia\Inertia;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\ClientPlaylistController;
+use App\Http\Controllers\SpotifyOAuthController;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 */
-
-//Route::get('/api/dj/{djId}/playlists', [App\Http\Controllers\API\PlaylistWidgetController::class, 'getPlaylists']);
 
 // Public routes
 Route::get('/', function () {
@@ -68,6 +67,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::get('/youtube/search', [App\Http\Controllers\YouTubeMusicController::class, 'search']);
+
     // Role-based redirects
     Route::get('/dashboard', function () {
         $user = auth()->user();
@@ -84,15 +85,16 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     // Client routes
-    Route::prefix('client')->name('client.')->middleware(['auth', 'verified'])->group(function () {
+    Route::prefix('client')->name('client.')->middleware(['verified'])->group(function () {
         Route::get('/dashboard', [ClientController::class, 'dashboard'])->name('dashboard');
+        Route::get('/settings', [ClientController::class, 'settings'])->name('settings');
+
         Route::get('/djs', [ClientController::class, 'browseDjs'])->name('djs');
         Route::get('/djs/{id}', [ClientController::class, 'showDj'])->name('djs.show');
         Route::get('/djs/{id}/book', [ClientController::class, 'bookDj'])->name('djs.book');
 
         Route::get('/bookings', [ClientController::class, 'bookings'])->name('bookings');
         Route::get('/bookings/{id}', [ClientController::class, 'showBooking'])->name('bookings.show');
-
 
         // Playlist CRUD routes
         Route::get('/playlists', [ClientPlaylistController::class, 'index'])->name('playlists');
@@ -109,18 +111,20 @@ Route::middleware('auth')->group(function () {
         Route::delete('/playlists/{id}/songs/{songId}', [ClientPlaylistController::class, 'removeSong'])->name('playlists.songs.remove');
         Route::put('/playlists/{id}/songs/reorder', [ClientPlaylistController::class, 'reorderSongs'])->name('playlists.songs.reorder');
 
-        //Route::get('/playlists', [ClientController::class, 'playlists'])->name('playlists');
-        //Route::get('/playlists/create', [ClientController::class, 'editPlaylist'])->name('playlists.create');
-        //Route::get('/playlists/{id}', [ClientController::class, 'showPlaylist'])->name('playlists.show');
-        //Route::get('/playlists/{id}/edit', [ClientController::class, 'editPlaylist'])->name('playlists.edit');
-
         Route::get('/venues', [ClientController::class, 'venues'])->name('venues');
         Route::get('/venues/create', [ClientController::class, 'editVenue'])->name('venues.create');
         Route::get('/venues/{id}/edit', [ClientController::class, 'editVenue'])->name('venues.edit');
     });
 
+    // Client Spotify OAuth (for playback) - MUST be before DJ Spotify routes
+    Route::prefix('spotify/client')->name('spotify.client.')->group(function () {
+        Route::get('/connect', [SpotifyOAuthController::class, 'redirect'])->name('connect');
+        Route::get('/callback', [SpotifyOAuthController::class, 'callback'])->name('callback');
+        Route::post('/disconnect', [SpotifyOAuthController::class, 'disconnect'])->name('disconnect');
+        Route::get('/token', [SpotifyOAuthController::class, 'getAccessToken'])->name('token');
+    });
 
-    // Spotify OAuth routes
+    // DJ Spotify OAuth (for showcase playlists)
     Route::prefix('spotify')->name('spotify.')->group(function () {
         Route::get('/redirect', [SpotifyController::class, 'redirect'])->name('redirect');
         Route::get('/callback', [SpotifyController::class, 'callback'])->name('callback');
@@ -132,14 +136,13 @@ Route::middleware('auth')->group(function () {
     });
 
     // DJ routes
-    Route::prefix('dj')->name('dj.')->middleware(['auth', 'verified'])->group(function () {
+    Route::prefix('dj')->name('dj.')->middleware(['verified'])->group(function () {
         Route::get('/dashboard', [DjController::class, 'dashboard'])->name('dashboard');
         Route::get('/profile/edit', [DjController::class, 'editProfile'])->name('profile.edit');
         Route::get('/bookings', [DjController::class, 'bookings'])->name('bookings');
         Route::get('/bookings/{id}', [DjController::class, 'showBooking'])->name('bookings.show');
         Route::get('/reviews', [DjController::class, 'reviews'])->name('reviews');
         Route::get('/earnings', [DjController::class, 'earnings'])->name('earnings');
-
 
         Route::get('/playlists', function () {
             $djProfile = auth()->user()->djProfile;
@@ -151,7 +154,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Venue routes
-    Route::prefix('venue')->name('venue.')->middleware(['auth', 'verified'])->group(function () {
+    Route::prefix('venue')->name('venue.')->middleware(['verified'])->group(function () {
         Route::get('/dashboard', [VenueController::class, 'dashboard'])->name('dashboard');
         Route::get('/calendar', [VenueController::class, 'calendar'])->name('calendar');
         Route::get('/bookings', [VenueController::class, 'bookings'])->name('bookings');
@@ -162,8 +165,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Admin routes
-    // 'can.admin'
-    Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(function () {
+    Route::prefix('admin')->name('admin.')->middleware(['verified'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::get('/djs', [AdminController::class, 'djs'])->name('djs');
@@ -175,7 +177,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Booking routes
-    Route::prefix('booking')->name('booking.')->middleware(['auth', 'verified'])->group(function () {
+    Route::prefix('booking')->name('booking.')->middleware(['verified'])->group(function () {
         Route::get('/create/{dj?}', [BookingController::class, 'create'])->name('create');
         Route::post('/store', [BookingController::class, 'store'])->name('store');
         Route::get('/{id}/confirm', [BookingController::class, 'confirm'])->name('confirm');
@@ -184,7 +186,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Playlist routes
-    Route::prefix('playlist')->name('playlist.')->middleware(['auth', 'verified'])->group(function () {
+    Route::prefix('playlist')->name('playlist.')->middleware(['verified'])->group(function () {
         Route::get('/create', [PlaylistController::class, 'create'])->name('create');
         Route::get('/{id}/edit', [PlaylistController::class, 'edit'])->name('edit');
         Route::post('/store', [PlaylistController::class, 'store'])->name('store');
@@ -193,7 +195,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{id}', [PlaylistController::class, 'destroy'])->name('destroy');
         Route::get('/search-songs', [PlaylistController::class, 'searchSongs'])->name('search-songs');
     });
-
 });
 
 require __DIR__ . '/auth.php';

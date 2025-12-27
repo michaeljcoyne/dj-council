@@ -1,5 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
+import { Settings } from 'lucide-vue-next';
 
 defineProps({
     stats: Object,
@@ -33,6 +34,10 @@ defineProps({
                         </Link>
                         <Link href="/client/playlists" class="flex items-center px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
                             My Playlists
+                        </Link>
+                        <Link href="/client/settings" class="flex items-center px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                            <Settings class="w-4 h-4 mr-2" />
+                            Settings
                         </Link>
                     </nav>
                 </div>

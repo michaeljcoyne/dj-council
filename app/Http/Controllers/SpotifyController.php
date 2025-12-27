@@ -90,6 +90,12 @@ class SpotifyController extends Controller
 
             // Update DJ profile with Spotify data
             $djProfile = auth()->user()->djProfile;
+
+            if (!$djProfile) {
+                return redirect()->back()->with('error', 'DJ profile not found');
+            }
+
+
             $djProfile->update([
                 'spotify_id' => $profile['id'],
                 'spotify_access_token' => encrypt($data['access_token']),

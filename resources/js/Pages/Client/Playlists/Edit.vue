@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { ArrowLeft, Search, Plus, X, GripVertical, Music, Play, Pause, Trash2, Pencil } from 'lucide-vue-next';
 import axios from 'axios';
+import SpotifyPlayer from '@/Components/SpotifyPlayer.vue';
 
 const props = defineProps({
     playlist: Object
@@ -95,6 +96,15 @@ const removeSong = async (songId) => {
         console.error('Remove song error:', error);
         showToast('Failed to remove', 'error');
     }
+};
+
+const handlePlaying = (spotifyId) => {
+    // Optional: Stop other players, show now playing, etc.
+    console.log('Now playing:', spotifyId);
+};
+
+const handleStopped = () => {
+    console.log('Stopped');
 };
 
 const deletePlaylist = () => {
@@ -349,7 +359,7 @@ const getTypeColor = (type) => ({
                                     <div class="text-xs text-gray-500 tabular-nums mr-1">{{ formatDuration(song.duration) }}</div>
 
                                     <!-- Smaller, tighter buttons -->
-                                    <button
+                                    <!--<button
                                         @click.stop="playPreview(song.preview_url, song.id)"
                                         class="w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0"
                                         :class="playingPreview === song.id ? 'bg-pink-500 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-300'"
@@ -357,7 +367,14 @@ const getTypeColor = (type) => ({
                                     >
                                         <Play v-if="playingPreview !== song.id" class="w-3 h-3 ml-0.5" />
                                         <Pause v-else class="w-3 h-3" />
-                                    </button>
+                                    </button>-->
+                                    <SpotifyPlayer
+                                        :spotify-id="song.spotify_id"
+                                        :title="song.title"
+                                        :artist="song.artist"
+                                        @playing="handlePlaying"
+                                        @stopped="handleStopped"
+                                    />
 
                                     <button
                                         @click="removeSong(song.id)"
