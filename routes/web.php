@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\PlaylistWidgetController;
 use Inertia\Inertia;
 use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\ClientPlaylistController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,7 +48,7 @@ Route::get('/djs', function () {
 })->name('djs.public');
 
 Route::get('/djs/{id}', function ($id) {
-    $djProfile = App\Models\DjProfile::with(['user', 'genres', 'reviews' => function($query) {
+    $djProfile = App\Models\DjProfile::with(['user', 'genres', 'reviews' => function ($query) {
         $query->where('is_approved', true)
             ->with('user')
             ->orderBy('created_at', 'desc');
@@ -92,10 +93,26 @@ Route::middleware('auth')->group(function () {
         Route::get('/bookings', [ClientController::class, 'bookings'])->name('bookings');
         Route::get('/bookings/{id}', [ClientController::class, 'showBooking'])->name('bookings.show');
 
-        Route::get('/playlists', [ClientController::class, 'playlists'])->name('playlists');
-        Route::get('/playlists/create', [ClientController::class, 'editPlaylist'])->name('playlists.create');
-        Route::get('/playlists/{id}', [ClientController::class, 'showPlaylist'])->name('playlists.show');
-        Route::get('/playlists/{id}/edit', [ClientController::class, 'editPlaylist'])->name('playlists.edit');
+
+        // Playlist CRUD routes
+        Route::get('/playlists', [ClientPlaylistController::class, 'index'])->name('playlists');
+        Route::get('/playlists/create', [ClientPlaylistController::class, 'create'])->name('playlists.create');
+        Route::post('/playlists', [ClientPlaylistController::class, 'store'])->name('playlists.store');
+        Route::get('/playlists/{id}', [ClientPlaylistController::class, 'show'])->name('playlists.show');
+        Route::get('/playlists/{id}/edit', [ClientPlaylistController::class, 'edit'])->name('playlists.edit');
+        Route::put('/playlists/{id}', [ClientPlaylistController::class, 'update'])->name('playlists.update');
+        Route::delete('/playlists/{id}', [ClientPlaylistController::class, 'destroy'])->name('playlists.destroy');
+
+        // Song management routes
+        Route::get('/songs/search', [ClientPlaylistController::class, 'searchSongs'])->name('songs.search');
+        Route::post('/playlists/{id}/songs', [ClientPlaylistController::class, 'addSong'])->name('playlists.songs.add');
+        Route::delete('/playlists/{id}/songs/{songId}', [ClientPlaylistController::class, 'removeSong'])->name('playlists.songs.remove');
+        Route::put('/playlists/{id}/songs/reorder', [ClientPlaylistController::class, 'reorderSongs'])->name('playlists.songs.reorder');
+
+        //Route::get('/playlists', [ClientController::class, 'playlists'])->name('playlists');
+        //Route::get('/playlists/create', [ClientController::class, 'editPlaylist'])->name('playlists.create');
+        //Route::get('/playlists/{id}', [ClientController::class, 'showPlaylist'])->name('playlists.show');
+        //Route::get('/playlists/{id}/edit', [ClientController::class, 'editPlaylist'])->name('playlists.edit');
 
         Route::get('/venues', [ClientController::class, 'venues'])->name('venues');
         Route::get('/venues/create', [ClientController::class, 'editVenue'])->name('venues.create');
@@ -176,6 +193,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{id}', [PlaylistController::class, 'destroy'])->name('destroy');
         Route::get('/search-songs', [PlaylistController::class, 'searchSongs'])->name('search-songs');
     });
+
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

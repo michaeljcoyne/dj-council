@@ -70,4 +70,9 @@ class User extends Authenticatable
     {
         return $this->user_type === 'admin';
     }
+
+    public function clientPlaylists()
+    {
+        return $this->hasMany(ClientPlaylist::class);
+    }
 }
