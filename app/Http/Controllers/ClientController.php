@@ -178,19 +178,6 @@ class ClientController extends Controller
         ]);
     }
 
-    /**
-     * Show a specific booking
-     */
-    public function showBooking($id)
-    {
-        $booking = Auth::user()->bookings()
-            ->with(['djProfile.user', 'venue', 'playlist.songs', 'review'])
-            ->findOrFail($id);
-
-        return Inertia::render('Client/BookingDetail', [
-            'booking' => $booking,
-        ]);
-    }
 
     /**
      * Show the client's playlists
@@ -331,5 +318,128 @@ class ClientController extends Controller
             'genres' => Genre::orderBy('name')->get(),
             'filters' => $request->only(['search', 'genre', 'location', 'min_rate', 'max_rate']),
         ]);
+    }
+
+
+
+    /**
+     * Store booking request
+     */
+    public function storeBooking(Request $request)
+    {
+        $validated = $request->validate([
+            'dj_profile_id' => 'nullable|exists:dj_profiles,id',
+            'playlist_id' => 'nullable|exists:playlists,id',
+            'event_type' => 'required|string|in:wedding,birthday,corporate,club,festival,private,other',
+            'event_date' => 'required|date|after:today',
+            'event_time' => 'required|date_format:H:i',
+            'duration_hours' => 'required|integer|min:1|max:24',
+            'expected_guests' => 'required|integer|min:1',
+            'venue_name' => 'required|string|max:255',
+            'venue_address' => 'required|string|max:255',
+            'venue_city' => 'required|string|max:100',
+            'venue_postcode' => 'required|string|max:20',
+            'special_requests' => 'nullable|string|max:2000',
+        ]);
+
+        // Create or find venue
+        $venue = Venue::firstOrCreate([
+            'name' => $validated['venue_name'],
+            'address' => $validated['venue_address'],
+            'city' => $validated['venue_city'],
+            'postcode' => $validated['venue_postcode'],
+        ]);
+
+        // If booking specific DJ, validate minimum hours and calculate pricing
+        $totalPrice = null;
+        if ($validated['dj_profile_id']) {
+            $dj = DjProfile::findOrFail($validated['dj_profile_id']);
+
+            // Validate minimum booking hours
+            if ($validated['duration_hours'] < $dj->minimum_booking_hours) {
+                return back()->withErrors([
+                    'duration_hours' => "This DJ requires a minimum of {$dj->minimum_booking_hours} hours."
+                ]);
+            }
+
+            // Calculate total price (hourly rate * hours * 1.10 for 10% fee)
+            $subtotal = $dj->hourly_rate * $validated['duration_hours'];
+            $totalPrice = $subtotal * 1.10; // Include 10% booking fee
+        }
+
+        // Combine date and time into datetime
+        $eventDateTime = \Carbon\Carbon::parse($validated['event_date'] . ' ' . $validated['event_time']);
+
+        // Create booking
+        $booking = Booking::create([
+            'user_id' => Auth::id(),
+            'dj_profile_id' => $validated['dj_profile_id'],
+            'venue_id' => $venue->id,
+            'event_type' => $validated['event_type'],
+            'event_date' => $eventDateTime,
+            'duration_hours' => $validated['duration_hours'],
+            'total_price' => $totalPrice,
+            'special_requests' => $validated['special_requests'],
+            'playlist_id' => $validated['playlist_id'],
+            'status' => 'pending',
+        ]);
+
+        // TODO: Send notification to DJ (or all DJs if generic request)
+        // TODO: Send confirmation email to client
+
+        if ($validated['dj_profile_id']) {
+            return redirect()->route('client.bookings.show', $booking)
+                ->with('success', 'Booking request sent successfully!');
+        } else {
+            return redirect()->route('client.bookings.index')
+                ->with('success', 'Your request has been sent to available DJs!');
+        }
+    }
+
+    /**
+     * Show booking details (rename from showBooking to avoid conflict)
+     */
+    public function show(Booking $booking)
+    {
+        // Ensure user owns this booking
+        if ($booking->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $booking->load(['djProfile.user', 'venue', 'playlist']);
+
+        return Inertia::render('Client/BookingDetails', [
+            'booking' => $booking,
+        ]);
+    }
+
+
+
+
+    /**
+     * Cancel booking
+     */
+    public function cancelBooking(Booking $booking)
+    {
+        // Ensure user owns this booking
+        if ($booking->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Can only cancel pending or confirmed bookings
+        if (!in_array($booking->status, ['pending', 'confirmed'])) {
+            return back()->withErrors([
+                'error' => 'This booking cannot be cancelled.'
+            ]);
+        }
+
+        $booking->update([
+            'status' => 'cancelled',
+        ]);
+
+        // TODO: Notify DJ of cancellation
+        // TODO: Process refund if payment was made
+
+        return back()->with('success', 'Booking cancelled successfully.');
     }
 }

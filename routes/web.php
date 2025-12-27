@@ -70,8 +70,17 @@ Route::middleware('auth')->group(function () {
         // Removed /djs routes - they're now public (above)
         Route::get('/djs/{id}/book', [ClientController::class, 'bookDj'])->name('djs.book');
 
-        Route::get('/bookings', [ClientController::class, 'bookings'])->name('bookings');
-        Route::get('/bookings/{id}', [ClientController::class, 'showBooking'])->name('bookings.show');
+
+        // Book specific DJ - show form
+        Route::get('/djs/{id}/book', [ClientController::class, 'bookDj'])->name('djs.book');
+        // Store booking (handles both direct and generic requests)
+        Route::post('/bookings', [ClientController::class, 'storeBooking'])->name('bookings.store');
+        // List all bookings (already exists as bookings())
+        Route::get('/bookings', [ClientController::class, 'bookings'])->name('bookings.index');
+        // View single booking details
+        Route::get('/bookings/{booking}', [ClientController::class, 'show'])->name('bookings.show');
+        // Cancel booking
+        Route::delete('/bookings/{booking}', [ClientController::class, 'cancelBooking'])->name('bookings.cancel');
 
         // Playlist CRUD routes
         Route::get('/playlists', [ClientPlaylistController::class, 'index'])->name('playlists');
