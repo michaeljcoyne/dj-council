@@ -221,6 +221,17 @@ const cancelBooking = () => {
 
                                 <p class="text-gray-300 whitespace-pre-wrap">{{ booking.special_requests }}</p>
                             </div>
+
+                            <!-- Decline Reason (if declined) -->
+                            <div v-if="booking.status === 'cancelled' && booking.decline_reason" class="bg-red-900/20 border-2 border-red-500/50 rounded-xl p-6">
+                                <h2 class="text-xl font-bold text-red-400 mb-4 flex items-center gap-2">
+                                    <XCircle class="w-5 h-5" />
+                                    Booking Declined
+                                </h2>
+
+                                <div class="mb-2 text-sm text-gray-400">The DJ declined this booking with the following reason:</div>
+                                <p class="text-gray-300 whitespace-pre-wrap">{{ booking.decline_reason }}</p>
+                            </div>
                         </div>
 
                         <!-- Sidebar -->
@@ -300,9 +311,10 @@ const cancelBooking = () => {
                                             <div :class="['w-2 h-2 rounded-full mt-1.5', ['confirmed', 'completed'].includes(booking.status) ? 'bg-green-400' : booking.status === 'cancelled' ? 'bg-red-400' : 'bg-gray-600']"></div>
                                             <div>
                                                 <div class="text-white font-medium">
-                                                    {{ booking.status === 'confirmed' || booking.status === 'completed' ? 'DJ Accepted' : booking.status === 'cancelled' ? 'Cancelled' : 'Awaiting Response' }}
+                                                    {{ booking.status === 'confirmed' || booking.status === 'completed' ? 'DJ Accepted' : booking.status === 'cancelled' ? 'Declined by DJ' : 'Awaiting Response' }}
                                                 </div>
                                                 <div v-if="booking.status === 'pending'" class="text-gray-400 text-xs">Pending...</div>
+                                                <div v-else-if="booking.status === 'cancelled'" class="text-gray-400 text-xs">See reason above</div>
                                             </div>
                                         </div>
 

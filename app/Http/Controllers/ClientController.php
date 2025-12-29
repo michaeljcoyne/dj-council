@@ -166,7 +166,7 @@ class ClientController extends Controller
                     ->orderBy('event_date', 'desc');
                 break;
             case 'cancelled':
-                $query->where('status', 'cancelled')
+                $query->whereIn('status', ['cancelled', 'declined'])
                     ->orderBy('event_date', 'desc');
                 break;
             default:

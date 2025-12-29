@@ -123,12 +123,21 @@ Route::middleware('auth')->group(function () {
 
     // DJ routes
     Route::prefix('dj')->name('dj.')->middleware(['verified'])->group(function () {
-        Route::get('/dashboard', [DjController::class, 'dashboard'])->name('dashboard');
-        Route::get('/profile/edit', [DjController::class, 'editProfile'])->name('profile.edit');
-        Route::get('/bookings', [DjController::class, 'bookings'])->name('bookings');
-        Route::get('/bookings/{id}', [DjController::class, 'showBooking'])->name('bookings.show');
-        Route::get('/reviews', [DjController::class, 'reviews'])->name('reviews');
         Route::get('/earnings', [DjController::class, 'earnings'])->name('earnings');
+
+        // Dashboard
+        Route::get('/dashboard', [DjController::class, 'dashboard'])->name('dashboard');
+        // Profile
+        Route::post('/profile', [DjController::class, 'storeProfile'])->name('profile.store');
+        Route::get('/profile/edit', [DjController::class, 'editProfile'])->name('profile.edit');
+        // Bookings
+        Route::get('/bookings', [DjController::class, 'bookings'])->name('bookings.index');
+        Route::get('/bookings/{id}', [DjController::class, 'showBooking'])->name('bookings.show');
+        // Accept/Decline bookings
+        Route::post('/bookings/{id}/accept', [DjController::class, 'acceptBooking'])->name('bookings.accept');
+        Route::post('/bookings/{id}/decline', [DjController::class, 'declineBooking'])->name('bookings.decline');
+        // Reviews
+        Route::get('/reviews', [DjController::class, 'reviews'])->name('reviews');
 
         Route::get('/playlists', function () {
             $djProfile = auth()->user()->djProfile;

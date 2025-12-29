@@ -19,25 +19,17 @@ class DjController extends Controller
         $user = Auth::user();
         $djProfile = $user->djProfile;
 
-       /* if (!$djProfile) {
+        // If user doesn't have a DJ profile, redirect to create one
+        if (!$djProfile) {
             return Inertia::render('DJ/CreateProfile', [
                 'genres' => Genre::orderBy('name')->get(),
             ]);
-        }*/
-
-        // Dummy data for development
-        $djProfile = $djProfile ?? new \App\Models\DjProfile([
-            'stage_name' => 'Dev DJ',
-            'specialty' => 'Testing',
-            'hourly_rate' => 100,
-            'minimum_booking_hours' => 2,
-        ]);
-
+        }
 
         $upcomingBookings = $djProfile->bookings()
             ->where('event_date', '>=', now())
             ->where('status', 'confirmed')
-            ->with(['user', 'venue', 'playlist.songs'])
+            ->with(['user', 'venue', 'playlist'])
             ->orderBy('event_date')
             ->take(5)
             ->get();
@@ -62,8 +54,7 @@ class DjController extends Controller
         ];
 
         return Inertia::render('DJ/Dashboard', [
-            'profile' => $djProfile,
-            //'profile' => $djProfile->load('genres'),
+            'profile' => $djProfile->load('genres'),
             'upcomingBookings' => $upcomingBookings,
             'pendingBookings' => $pendingBookings,
             'stats' => $stats,
@@ -192,5 +183,108 @@ class DjController extends Controller
             'reviews' => $reviews,
             'ratingStats' => $ratingStats,
         ]);
+    }
+
+    /**
+     * Accept a booking request
+     */
+    public function acceptBooking($id)
+    {
+        $user = Auth::user();
+        $djProfile = $user->djProfile;
+
+        if (!$djProfile) {
+            abort(403, 'DJ profile not found');
+        }
+
+        $booking = $djProfile->bookings()
+            ->where('id', $id)
+            ->where('status', 'pending')
+            ->firstOrFail();
+
+        $booking->update([
+            'status' => 'confirmed',
+            'responded_at' => now(),
+        ]);
+
+        // TODO: Send notification to client
+        // TODO: Send confirmation email
+
+        return redirect()->route('dj.bookings.show', $booking)
+            ->with('success', 'Booking accepted successfully!');
+    }
+
+    /**
+     * Decline a booking request
+     */
+    public function declineBooking(Request $request, $id)
+    {
+        $user = Auth::user();
+        $djProfile = $user->djProfile;
+
+        if (!$djProfile) {
+            abort(403, 'DJ profile not found');
+        }
+
+        $booking = $djProfile->bookings()
+            ->where('id', $id)
+            ->where('status', 'pending')
+            ->firstOrFail();
+
+        $booking->update([
+            'status' => 'declined',
+            'responded_at' => now(),
+            'decline_reason' => $request->input('reason', 'No reason provided'),
+        ]);
+
+        // TODO: Send notification to client
+        // TODO: Send decline email with reason
+
+        return redirect()->route('dj.bookings.index')
+            ->with('success', 'Booking declined.');
+    }
+
+    /**
+     * Store a new DJ profile
+     */
+    public function storeProfile(Request $request)
+    {
+        $user = Auth::user();
+
+        // Check if user already has a DJ profile
+        if ($user->djProfile) {
+            return redirect()->route('dj.dashboard');
+        }
+
+        $validated = $request->validate([
+            'stage_name' => 'required|string|max:255',
+            'specialty' => 'required|string|max:255',
+            'bio' => 'required|string|max:2000',
+            'location' => 'required|string|max:255',
+            'hourly_rate' => 'required|numeric|min:0',
+            'minimum_booking_hours' => 'required|integer|min:1',
+            'genre_ids' => 'array',
+            'genre_ids.*' => 'exists:genres,id',
+        ]);
+
+        // Create DJ profile
+        $djProfile = DjProfile::create([
+            'user_id' => $user->id,
+            'stage_name' => $validated['stage_name'],
+            'specialty' => $validated['specialty'],
+            'bio' => $validated['bio'],
+            'location' => $validated['location'],
+            'hourly_rate' => $validated['hourly_rate'],
+            'minimum_booking_hours' => $validated['minimum_booking_hours'],
+            'is_available' => true,
+        ]);
+
+        // Attach genres if provided
+        if (!empty($validated['genre_ids'])) {
+            $djProfile->genres()->attach($validated['genre_ids']);
+        }
+
+        return redirect()->route('dj.dashboard')
+            ->with('success', 'DJ profile created successfully!');
     }
 }

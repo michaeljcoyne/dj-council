@@ -20,6 +20,7 @@ const getStatusColor = (status) => {
         confirmed: 'text-green-400 bg-green-400/10',
         completed: 'text-blue-400 bg-blue-400/10',
         cancelled: 'text-red-400 bg-red-400/10',
+        declined: 'text-red-400 bg-red-400/10',
     };
     return colors[status] || 'text-gray-400 bg-gray-400/10';
 };
@@ -130,7 +131,7 @@ const formatCurrency = (amount) => {
                                                 {{ booking.event_type }}
                                             </span>
                                         <span :class="['px-3 py-1 rounded-full text-xs font-medium capitalize', getStatusColor(booking.status)]">
-                                                {{ booking.status }}
+                                                {{ booking.status === 'cancelled' ? 'Declined' : booking.status }}
                                             </span>
                                     </div>
 
